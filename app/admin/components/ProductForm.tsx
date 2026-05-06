@@ -3,10 +3,10 @@ import { ChangeEvent, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { Image, Upload, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogContent, AlertDialogOverlay, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface CreateProductProps {
   userId?: string;
+  onSuccess?: () => void;
 }
 
 interface ProductFormData {
@@ -77,7 +77,7 @@ function Field({
   );
 }
 
-export function ProductForm({ userId }: CreateProductProps) {
+export function ProductForm({ userId, onSuccess }: CreateProductProps) {
   const { showToast } = useToast();
 
   // Dados do produto
@@ -178,6 +178,7 @@ export function ProductForm({ userId }: CreateProductProps) {
 
       showToast("Produto criado com sucesso!", "success", "✅");
       resetForm();
+      if (onSuccess) onSuccess();
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Erro desconhecido",
@@ -190,281 +191,244 @@ export function ProductForm({ userId }: CreateProductProps) {
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button className='h-10 mx-2'>Criar Produto</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogOverlay>
-          <div
-            style={{
-              maxWidth: 720,
-              margin: "0 auto",
-              padding: "40px 24px",
-              background: "var(--black)",
-              minHeight: "100vh",
-            }}
-          >
-            <h1
-              className="font-display"
-              style={{ fontSize: 40, color: "var(--white)", marginBottom: 8 }}
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 720,
+        padding: "28px 24px",
+        background: "#0A0A0A",
+      }}
+    >
+      <div style={{ marginBottom: 24 }}>
+        <h1
+          className="font-display"
+          style={{ fontSize: 32, color: "var(--white)", marginBottom: 6 }}
+        >
+          NOVO <span style={{ color: "var(--gold)" }}>PRODUTO</span>
+        </h1>
+        <p style={{ fontSize: 14, color: "var(--gray)", maxWidth: 560 }}>
+          Preencha os dados e faça o upload da mídia para adicionar um produto ao catálogo.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Nome */}
+        <Field label="Nome do produto" field="name" form={form} set={set} placeholder="Ex: Air Jordan 4 Yellow Thunder" required />
+
+        {/* Preço + Estoque */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <Field label="Preço (R$)" field="price" type="number" form={form} set={set} placeholder="899.90" required />
+          <Field label="Estoque" field="stock" type="number" form={form} set={set} placeholder="10" required />
+        </div>
+
+        {/* Tamanho */}
+        <Field label="Tamanho (opcional)" field="size" type="number" form={form} set={set} placeholder="42" />
+
+        {/* Descrição */}
+        <div>
+          <label style={labelStyle}>
+            Descrição <span style={{ color: "#e74c3c" }}>*</span>
+          </label>
+          <textarea
+            value={form.description}
+            onChange={(e) => set("description", e.target.value)}
+            placeholder="Descreva o produto em poucas palavras..."
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--gold)")}
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")
+            }
+          />
+        </div>
+
+        {/* Detalhes */}
+        <div>
+          <label style={labelStyle}>Detalhes</label>
+          <textarea
+            value={form.details}
+            onChange={(e) => set("details", e.target.value)}
+            placeholder="Materiais, tecnologias, especificações..."
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--gold)")}
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")
+            }
+          />
+        </div>
+
+        {/* Upload de mídia */}
+        <div>
+          <label style={labelStyle}>
+            Imagem / Vídeo <span style={{ color: "#e74c3c" }}>*</span>
+          </label>
+
+          {!selectedFile ? (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: "2px dashed rgba(245,197,24,0.3)",
+                borderRadius: 10,
+                padding: "48px 24px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: "rgba(245,197,24,0.02)",
+                transition: "border-color .2s, background .2s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(245,197,24,0.6)";
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(245,197,24,0.05)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor =
+                  "rgba(245,197,24,0.3)";
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(245,197,24,0.02)";
+              }}
             >
-              NOVO <span style={{ color: "var(--gold)" }}>PRODUTO</span>
-            </h1>
-            <p style={{ fontSize: 13, color: "var(--gray)", marginBottom: 32 }}>
-              Preencha os dados e faça o upload da mídia para adicionar um produto ao catálogo.
-            </p>
-
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {/* Nome */}
-              <Field label="Nome do produto" field="name" form={form} set={set} placeholder="Ex: Air Jordan 4 Yellow Thunder" required />
-
-              {/* Preço + Estoque */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <Field label="Preço (R$)" field="price" type="number" form={form} set={set} placeholder="899.90" required />
-                <Field label="Estoque" field="stock" type="number" form={form} set={set} placeholder="10" required />
+              <Upload
+                size={36}
+                color="var(--gold)"
+                style={{ marginBottom: 12, opacity: 0.7 }}
+              />
+              <div
+                className="font-condensed"
+                style={{ fontSize: 14, color: "var(--gray)", letterSpacing: "0.05em" }}
+              >
+                Clique para selecionar uma foto ou vídeo
               </div>
-
-              {/* Tamanho */}
-              <Field label="Tamanho (opcional)" field="size" type="number" form={form} set={set} placeholder="42" />
-
-              {/* Descrição */}
-              <div>
-                <label style={labelStyle}>
-                  Descrição <span style={{ color: "#e74c3c" }}>*</span>
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => set("description", e.target.value)}
-                  placeholder="Descreva o produto em poucas palavras..."
-                  rows={3}
-                  style={{ ...inputStyle, resize: "vertical" }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--gold)")}
-                  onBlur={(e) =>
-                    (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")
-                  }
+              <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>
+                JPG, PNG, WEBP, MP4 — máx. 100MB
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                position: "relative",
+                borderRadius: 10,
+                overflow: "hidden",
+                background: "#111",
+                border: "1px solid rgba(245,197,24,0.2)",
+              }}
+            >
+              {fileType === "image" ? (
+                <img
+                  src={preview!}
+                  alt="Preview"
+                  style={{ width: "100%", maxHeight: 320, objectFit: "cover", display: "block" }}
                 />
-              </div>
-
-              {/* Detalhes */}
-              <div>
-                <label style={labelStyle}>Detalhes</label>
-                <textarea
-                  value={form.details}
-                  onChange={(e) => set("details", e.target.value)}
-                  placeholder="Materiais, tecnologias, especificações..."
-                  rows={3}
-                  style={{ ...inputStyle, resize: "vertical" }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--gold)")}
-                  onBlur={(e) =>
-                    (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")
-                  }
+              ) : (
+                <video
+                  src={preview!}
+                  controls
+                  style={{ width: "100%", maxHeight: 320, display: "block" }}
                 />
-              </div>
+              )}
 
-              {/* Upload de mídia */}
-              <div>
-                <label style={labelStyle}>
-                  Imagem / Vídeo <span style={{ color: "#e74c3c" }}>*</span>
-                </label>
-
-                {!selectedFile ? (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      border: "2px dashed rgba(245,197,24,0.3)",
-                      borderRadius: 10,
-                      padding: "48px 24px",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      background: "rgba(245,197,24,0.02)",
-                      transition: "border-color .2s, background .2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor =
-                        "rgba(245,197,24,0.6)";
-                      (e.currentTarget as HTMLElement).style.background =
-                        "rgba(245,197,24,0.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor =
-                        "rgba(245,197,24,0.3)";
-                      (e.currentTarget as HTMLElement).style.background =
-                        "rgba(245,197,24,0.02)";
-                    }}
-                  >
-                    <Upload
-                      size={36}
-                      color="var(--gold)"
-                      style={{ marginBottom: 12, opacity: 0.7 }}
-                    />
-                    <div
-                      className="font-condensed"
-                      style={{ fontSize: 14, color: "var(--gray)", letterSpacing: "0.05em" }}
-                    >
-                      Clique para selecionar uma foto ou vídeo
-                    </div>
-                    <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>
-                      JPG, PNG, WEBP, MP4 — máx. 100MB
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      position: "relative",
-                      borderRadius: 10,
-                      overflow: "hidden",
-                      background: "#111",
-                      border: "1px solid rgba(245,197,24,0.2)",
-                    }}
-                  >
-                    {fileType === "image" ? (
-                      <img
-                        src={preview!}
-                        alt="Preview"
-                        style={{ width: "100%", maxHeight: 320, objectFit: "cover", display: "block" }}
-                      />
-                    ) : (
-                      <video
-                        src={preview!}
-                        controls
-                        style={{ width: "100%", maxHeight: 320, display: "block" }}
-                      />
-                    )}
-
-                    {/* Overlay de ações */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        display: "flex",
-                        gap: 8,
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        style={{
-                          background: "rgba(0,0,0,0.75)",
-                          border: "1px solid rgba(255,255,255,0.2)",
-                          borderRadius: 6,
-                          padding: "6px 10px",
-                          cursor: "pointer",
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          fontSize: 12,
-                        }}
-                      >
-                        {fileType === "image" ? <Image size={14} /> : <Video size={14} />}
-                        Trocar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={removeFile}
-                        style={{
-                          background: "rgba(231,76,60,0.8)",
-                          border: "none",
-                          borderRadius: 6,
-                          padding: "6px 10px",
-                          cursor: "pointer",
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          fontSize: 12,
-                        }}
-                      >
-                        <X size={14} /> Remover
-                      </button>
-                    </div>
-
-                    {/* Nome do arquivo */}
-                    <div
-                      style={{
-                        padding: "8px 12px",
-                        background: "rgba(0,0,0,0.6)",
-                        fontSize: 11,
-                        color: "var(--gray)",
-                      }}
-                    >
-                      {selectedFile.name} —{" "}
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleFileSelect}
-                  style={{ display: "none" }}
-                  disabled={isLoading}
-                />
-              </div>
-
-              {/* Separador */}
-              <div className="stripe-sep" />
-
-              {/* Botões */}
-              <div style={{ display: "flex", gap: 12 }}>
+              {/* Overlay de ações */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  display: "flex",
+                  gap: 8,
+                }}
+              >
                 <button
                   type="button"
-                  onClick={resetForm}
-                  disabled={isLoading}
-                  className="btn-outline"
+                  onClick={() => fileInputRef.current?.click()}
                   style={{
-                    flex: 1,
-                    padding: "14px 0",
-                    borderRadius: 8,
+                    background: "rgba(0,0,0,0.75)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 6,
+                    padding: "6px 10px",
                     cursor: "pointer",
-                    fontSize: 14,
-                    background: "transparent",
-                  }}
-                >
-                  Limpar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn-gold"
-                  style={{
-                    flex: 2,
-                    padding: "14px 0",
-                    borderRadius: 8,
-                    border: "none",
-                    cursor: isLoading ? "wait" : "pointer",
-                    fontSize: 14,
-                    opacity: isLoading ? 0.8 : 1,
+                    color: "#fff",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
+                    gap: 4,
+                    fontSize: 12,
                   }}
                 >
-                  {isLoading ? (
-                    <>
-                      <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>
-                        ⏳
-                      </span>{" "}
-                      Salvando...
-                    </>
-                  ) : (
-                    "✓ Criar Produto"
-                  )}
+                  {fileType === "image" ? <Image size={14} /> : <Video size={14} />}
+                  Trocar
+                </button>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  style={{
+                    background: "rgba(231,76,60,0.8)",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 12,
+                  }}
+                >
+                  <X size={14} /> Remover
                 </button>
               </div>
-            </form>
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-          </div>
-        </AlertDialogOverlay>
-        
-      </AlertDialogContent>
-    </AlertDialog>
-    
+              {/* Nome do arquivo */}
+              <div
+                style={{
+                  padding: "8px 12px",
+                  background: "rgba(0,0,0,0.6)",
+                  fontSize: 11,
+                  color: "var(--gray)",
+                }}
+              >
+                {selectedFile.name} —{" "}
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+            disabled={isLoading}
+          />
+        </div>
+
+        {/* Separador */}
+        <div className="stripe-sep" />
+
+        {/* Botões */}
+        <div style={{ display: "flex", gap: 12 }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={resetForm}
+            disabled={isLoading}
+            style={{ flex: 1 }}
+          >
+            Limpar
+          </Button>
+          <Button type="submit" disabled={isLoading} style={{ flex: 2 }}>
+            {isLoading ? (
+              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>
+                ⏳
+              </span>
+            ) : (
+              "✓ Criar Produto"
+            )}
+          </Button>
+        </div>
+      </form>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    </div>
   );
 }

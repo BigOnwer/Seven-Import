@@ -1,11 +1,9 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ProductForm } from "./components/ProductForm";
+import { ProductDialog } from "./components/ProductDialog";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
 
 export default function AdminPage() {
   const { user, loading } = useAuth();
@@ -41,7 +39,9 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--black)" }}>
       <Navbar />
-        <ProductForm userId={user.id}/>
+      <div style={{ padding: "32px 24px" }}>
+        <ProductDialog userId={user.id} />
+      </div>
     </div>
   );
 }
