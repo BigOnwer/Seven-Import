@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 
 interface CreateProductProps {
   userId?: string;
-  onSuccess?: () => void;
 }
 
 interface ProductFormData {
@@ -77,7 +76,7 @@ function Field({
   );
 }
 
-export function ProductForm({ userId, onSuccess }: CreateProductProps) {
+export function ProductForm({ userId }: CreateProductProps) {
   const { showToast } = useToast();
 
   // Dados do produto
@@ -178,7 +177,6 @@ export function ProductForm({ userId, onSuccess }: CreateProductProps) {
 
       showToast("Produto criado com sucesso!", "success", "✅");
       resetForm();
-      if (onSuccess) onSuccess();
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Erro desconhecido",
@@ -193,23 +191,22 @@ export function ProductForm({ userId, onSuccess }: CreateProductProps) {
   return (
     <div
       style={{
-        width: "100%",
         maxWidth: 720,
-        padding: "28px 24px",
-        background: "#0A0A0A",
+        margin: "0 auto",
+        padding: "40px 24px",
+        background: "var(--black)",
+        minHeight: "100vh",
       }}
     >
-      <div style={{ marginBottom: 24 }}>
-        <h1
-          className="font-display"
-          style={{ fontSize: 32, color: "var(--white)", marginBottom: 6 }}
-        >
-          NOVO <span style={{ color: "var(--gold)" }}>PRODUTO</span>
-        </h1>
-        <p style={{ fontSize: 14, color: "var(--gray)", maxWidth: 560 }}>
-          Preencha os dados e faça o upload da mídia para adicionar um produto ao catálogo.
-        </p>
-      </div>
+      <h1
+        className="font-display"
+        style={{ fontSize: 40, color: "var(--white)", marginBottom: 8 }}
+      >
+        NOVO <span style={{ color: "var(--gold)" }}>PRODUTO</span>
+      </h1>
+      <p style={{ fontSize: 13, color: "var(--gray)", marginBottom: 32 }}>
+        Preencha os dados e faça o upload da mídia para adicionar um produto ao catálogo.
+      </p>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Nome */}
@@ -407,24 +404,51 @@ export function ProductForm({ userId, onSuccess }: CreateProductProps) {
 
         {/* Botões */}
         <div style={{ display: "flex", gap: 12 }}>
-          <Button
+          <button
             type="button"
-            variant="outline"
             onClick={resetForm}
             disabled={isLoading}
-            style={{ flex: 1 }}
+            className="btn-outline"
+            style={{
+              flex: 1,
+              padding: "14px 0",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontSize: 14,
+              background: "transparent",
+            }}
           >
             Limpar
-          </Button>
-          <Button type="submit" disabled={isLoading} style={{ flex: 2 }}>
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn-gold"
+            style={{
+              flex: 2,
+              padding: "14px 0",
+              borderRadius: 8,
+              border: "none",
+              cursor: isLoading ? "wait" : "pointer",
+              fontSize: 14,
+              opacity: isLoading ? 0.8 : 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
             {isLoading ? (
-              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>
-                ⏳
-              </span>
+              <>
+                <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>
+                  ⏳
+                </span>{" "}
+                Salvando...
+              </>
             ) : (
               "✓ Criar Produto"
             )}
-          </Button>
+          </button>
         </div>
       </form>
 

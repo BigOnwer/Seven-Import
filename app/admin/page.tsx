@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ProductDialog } from "./components/ProductDialog";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
+import { ProductForm } from "./components/ProductForm";
 
 export default function AdminPage() {
   const { user, loading } = useAuth();
@@ -38,10 +39,7 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--black)" }}>
-      <Navbar />
-      <div style={{ padding: "32px 24px" }}>
-        <ProductDialog userId={user.id} />
-      </div>
+      <ProductForm userId={user.id}/>
     </div>
   );
 }
