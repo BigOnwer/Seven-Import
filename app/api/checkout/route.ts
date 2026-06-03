@@ -11,33 +11,89 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }
 
-    const { items, address, couponId, subtotal, discount, shipping, total } = await req.json();
+    const { items, address, couponId, shipping } = await req.json();
 
-    // Cria Order PENDING antes de ir pro MP
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "Carrinho vazio." }, { status: 400 });
+    }
+
+    // Busca preços reais do banco — nunca confia no cliente
+    const productIds = items.map((i: any) => i.id);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, price: true, stock: true, emoji: true, images: true },
+    });
+
+    // Valida que todos os produtos existem
+    if (products.length !== productIds.length) {
+      return NextResponse.json({ error: "Um ou mais produtos não encontrados." }, { status: 400 });
+    }
+
+    // Monta itens com preços do banco
+    const validatedItems = items.map((item: any) => {
+      const product = products.find(p => p.id === item.id);
+      if (!product) throw new Error(`Produto ${item.id} não encontrado.`);
+      if (product.stock < item.quantity) {
+        throw new Error(`Produto "${product.name}" sem estoque suficiente.`);
+      }
+      return {
+        id:       product.id,
+        name:     product.name,
+        price:    product.price,   // preço real do banco
+        quantity: item.quantity,
+        size:     item.size ?? null,
+        image:    product.images?.[0] ?? null,
+      };
+    });
+
+    // Calcula subtotal com preços reais
+    const subtotal = validatedItems.reduce(
+      (sum, i) => sum + i.price * i.quantity, 0
+    );
+
+    // Valida e aplica cupom se enviado
+    let discount = 0;
+    let validCoupon = null;
+    if (couponId) {
+      validCoupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+      if (validCoupon && validCoupon.status === "ACTIVE") {
+        if (!validCoupon.expiresAt || validCoupon.expiresAt > new Date()) {
+          if (!validCoupon.maxUses || validCoupon.usedCount < validCoupon.maxUses) {
+            discount = validCoupon.discountType === "PERCENTAGE"
+              ? subtotal * (Number(validCoupon.discountValue) / 100)
+              : Math.min(Number(validCoupon.discountValue), subtotal);
+          }
+        }
+      }
+    }
+
+    const shippingValue = Number(shipping ?? 0);
+    const total = Math.max(0, subtotal - discount + shippingValue);
+
     const order = await prisma.order.create({
       data: {
         userId:        session.user.id,
-        couponId:      couponId ?? null,
+        couponId:      validCoupon?.id ?? null,
         status:        "PENDING",
-        paymentMethod: "CREDIT_CARD", // o MP define o real; webhook corrige
+        paymentMethod: "CREDIT_CARD",
         paymentStatus: "PENDING",
         subtotal,
-        discount:      discount ?? 0,
-        shipping:      shipping ?? 0,
+        discount,
+        shipping:      shippingValue,
         total,
-        address:       address.rua + (address.numero ? `, ${address.numero}` : "") + (address.complemento ? ` ${address.complemento}` : ""),
+        address:       `${address.rua}${address.numero ? `, ${address.numero}` : ""}${address.complemento ? ` ${address.complemento}` : ""}`,
         city:          address.cidade,
         state:         address.estado,
         zipCode:       address.cep,
         items: {
-          create: items.map((item: any) => ({
+          create: validatedItems.map(item => ({
             productId: item.id,
             quantity:  item.quantity,
             price:     item.price,
-            size:      item.size ?? null,
+            size:      item.size,
           })),
         },
       },
@@ -47,7 +103,7 @@ export async function POST(req: NextRequest) {
     const response = await preference.create({
       body: {
         external_reference: order.id,
-        items: items.map((item: any) => ({
+        items: validatedItems.map(item => ({
           id:          String(item.id),
           title:       item.name,
           quantity:    item.quantity,
@@ -56,7 +112,6 @@ export async function POST(req: NextRequest) {
           picture_url: item.image,
         })),
         notification_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook/mercadopago`,
-        // back_urls só em produção com URL real
         ...(process.env.NEXT_PUBLIC_BASE_URL && !process.env.NEXT_PUBLIC_BASE_URL.includes("localhost") && {
           back_urls: {
             success: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
@@ -72,8 +127,11 @@ export async function POST(req: NextRequest) {
       checkoutUrl: response.sandbox_init_point ?? response.init_point,
       orderId: order.id,
     });
-  } catch (err) {
-    console.error("[POST /api/checkout]", err);
-    return NextResponse.json({ error: "Erro ao criar pedido" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[POST /api/checkout]", err.message);
+    return NextResponse.json(
+      { error: err.message ?? "Erro ao criar pedido." },
+      { status: 400 }
+    );
   }
 }

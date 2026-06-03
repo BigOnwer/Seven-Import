@@ -9,13 +9,14 @@ export async function GET() {
   }
   return NextResponse.json({
     user: {
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
+      id:        session.user.id,
+      email:     session.user.email,
+      name:      session.user.name,
       createdAt: session.user.createdAt,
-      cpf: session.user.cpf,
-      address: session.user.address,
-      phone: session.user.phone,
+      cpf:       session.user.cpf,
+      address:   session.user.address,
+      phone:     session.user.phone,
+      role:      session.user.role,
     },
   });
 }
@@ -27,18 +28,30 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }
 
-    const { name, email, phone } = await req.json();
+    const { name, phone } = await req.json();
 
-    if (!name || !phone || !email) {
-      return NextResponse.json({ error: "Nome, email e telefone são obrigatórios." }, { status: 400 });
+    // Email não pode ser trocado por aqui — exigiria verificação
+    if (!name?.trim()) {
+      return NextResponse.json({ error: "Nome é obrigatório." }, { status: 400 });
     }
 
-    const atualizedUser = await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: session.user.id },
-      data: { name, email, phone },
+      data: {
+        name:  name.trim(),
+        phone: phone?.trim() ?? null,
+      },
     });
-    return NextResponse.json({ user: atualizedUser });
-  }catch (error) {
+
+    return NextResponse.json({
+      user: {
+        id:    updated.id,
+        email: updated.email,
+        name:  updated.name,
+        phone: updated.phone,
+      },
+    });
+  } catch (error) {
     console.error("[UPDATE_USER]", error);
     return NextResponse.json({ error: "Erro ao atualizar usuário." }, { status: 500 });
   }

@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/adminGuard";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   const { id } = await params;
   const { status } = await req.json();
+
+  const validStatuses = ["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"];
+  if (!validStatuses.includes(status)) {
+    return NextResponse.json({ error: "Status inválido." }, { status: 400 });
+  }
 
   const updated = await prisma.order.update({
     where: { id },
@@ -21,12 +25,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   const { id } = await params;
-
   await prisma.order.delete({ where: { id } });
 
   return new NextResponse(null, { status: 204 });
