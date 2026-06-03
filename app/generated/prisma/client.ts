@@ -47,6 +47,16 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model Order
+ * 
+ */
+export type Order = Prisma.OrderModel
+/**
+ * Model OrderItem
+ * 
+ */
+export type OrderItem = Prisma.OrderItemModel
+/**
  * Model Cart
  * 
  */
@@ -61,6 +71,11 @@ export type CartItem = Prisma.CartItemModel
  * 
  */
 export type Product = Prisma.ProductModel
+/**
+ * Model Coupon
+ * 
+ */
+export type Coupon = Prisma.CouponModel
 /**
  * Model VerificationCode
  * 

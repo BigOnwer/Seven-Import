@@ -403,10 +403,6 @@ export type VerificationCodeUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.VerificationCodeScalarWhereInput | Prisma.VerificationCodeScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type VerificationCodeCreateWithoutUserInput = {
   id?: string
   code: string
