@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cartContext";
 import { useCoupon } from "@/lib/useCoupon";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const SHIPPING_THRESHOLD = 800;
 
@@ -20,6 +21,8 @@ export default function CartPage() {
   const finalTotal = total - discount;
   const freeShipping = finalTotal >= SHIPPING_THRESHOLD;
 
+  const router = useRouter()
+
   const handleApply = async () => {
     await apply(couponInput);
     // limpa o campo só em caso de sucesso (erro fica visível)
@@ -33,11 +36,7 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     setCheckingOut(true);
-    setTimeout(() => {
-      clearCart();
-      setCheckingOut(false);
-      alert("✅ Pedido realizado! Entre em contato via @sevenimportbr para finalizar o pagamento.");
-    }, 1800);
+    router.push("/checkout");
   };
 
   return (

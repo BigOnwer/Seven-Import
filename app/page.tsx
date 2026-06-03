@@ -10,23 +10,8 @@ import Testimonials from "@/components/Testimonials";
 import InstagramCTA from "@/components/InstagramCTA";
 import Footer from "@/components/Footer";
 import { ProductList } from "@/components/ProductList";
-import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
-
-initMercadoPago(process.env.MERCADO_PAGO_PUBLIC_TOKEN!, {locale: 'pt-BR'})
 
 export default function Home() {
-  
-  const customization = {
-      theme:'dark',
-      valueProp: 'practicality',
-      customStyle: {
-          valuePropColor: 'black',
-          buttonHeight: '48px',
-          borderRadius: '10px',
-          verticalPadding: '10px',
-          horizontalPadding: '10px',
-      }
-  };
   return (
     <main>
       <Navbar />

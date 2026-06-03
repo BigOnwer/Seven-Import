@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Cria Order PENDING antes de ir pro MP
     const order = await prisma.order.create({
       data: {
-        userId:        session.userId,
+        userId:        session.user.id,
         couponId:      couponId ?? null,
         status:        "PENDING",
         paymentMethod: "CREDIT_CARD", // o MP define o real; webhook corrige

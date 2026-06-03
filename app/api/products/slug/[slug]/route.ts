@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Ctx = { params: { slug: string } };
+type Ctx = { params: Promise<{ slug: string }> }
 
 export async function GET(_req: NextRequest, { params }: Ctx) {
   try {

@@ -1,36 +1,44 @@
-import {prisma} from "@/lib/prisma"
-import bcrypt from 'bcrypt'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-export async function POST(request: Request, response: Response) {
-    const data = await request.json()
-    const { email, name, address, cpf, phone } = data
+export async function POST(req: NextRequest) {
+  try {
+    const { name, email, cpf, phone } = await req.json();
 
-    if (!email || !name) {
-        console.log("Missing required fields")
-        return Response.json({ error: "Missing required fields" }, { status: 400 })
+    if (!name?.trim() || !email?.trim()) {
+      return NextResponse.json(
+        { error: "Nome e email são obrigatórios." },
+        { status: 400 }
+      );
     }
 
-    const existingUser = await prisma.user.findUnique({
-        where: { email }
-    })
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if(existingUser) {
-        console.log("User already exists")
-        return Response.json({ error: "User already exists" }, { status: 400 })
+    const existing = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existing) {
+      // Não retorna erro — deixa o fluxo de send-code continuar
+      // O usuário já existe, mas pode fazer login normalmente
+      return NextResponse.json({ success: true, alreadyExists: true });
     }
-
-    //const hashedPassword = await bcrypt.hash(password, 10)
 
     const user = await prisma.user.create({
-        data: {
-            email,
-            name,
-            //password: hashedPassword,
-            address,
-            cpf,
-            phone
-        }
-    })
+      data: {
+        name: name.trim(),
+        email: normalizedEmail,
+        cpf: cpf?.trim() || null,
+        phone: phone?.trim() || null,
+      },
+    });
 
-    return Response.json(user)
+    return NextResponse.json({ success: true, user: { id: user.id, email: user.email } });
+  } catch (error) {
+    console.error("[REGISTER]", error);
+    return NextResponse.json(
+      { error: "Erro ao criar conta. Tente novamente." },
+      { status: 500 }
+    );
+  }
 }

@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> }
 
 // ─── GET /api/products/[id] ──────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: Ctx) {
   try {
-    const id = params.id;
+    const { id } = await params
     if (!id) return NextResponse.json({ error: "ID inválido." }, { status: 400 });
 
     const product = await prisma.product.findUnique({ where: { id } });
@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     if (!session)                       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     if (session.user.role !== "ADMIN")  return NextResponse.json({ error: "Acesso negado." },   { status: 403 });
 
-    const id = params.id;
+    const { id } = await params
     if (!id) return NextResponse.json({ error: "ID inválido." }, { status: 400 });
 
     const exists = await prisma.product.findUnique({ where: { id } });
@@ -97,7 +97,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     if (!session)                       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     if (session.user.role !== "ADMIN")  return NextResponse.json({ error: "Acesso negado." },   { status: 403 });
 
-    const id = params.id;
+    const { id } = await params
     if (!id) return NextResponse.json({ error: "ID inválido." }, { status: 400 });
 
     const exists = await prisma.product.findUnique({ where: { id } });

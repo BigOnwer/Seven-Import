@@ -12,6 +12,18 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Verifica se o usuário existe antes de qualquer coisa
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Nenhuma conta encontrada com esse email. Faça seu cadastro primeiro." },
+        { status: 404 }
+      );
+    }
+
     // Rate limit: máx 3 códigos nos últimos 10 minutos
     const recentCodes = await prisma.verificationCode.count({
       where: {
@@ -27,21 +39,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Invalidar códigos anteriores
+    // Invalida códigos anteriores
     await prisma.verificationCode.updateMany({
       where: { email: normalizedEmail, used: false },
       data: { used: true },
     });
 
     const code = generateCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-
-    // Upsert do usuário
-    const user = await prisma.user.upsert({
-      where: { email: normalizedEmail },
-      update: {},
-      create: { email: normalizedEmail },
-    });
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await prisma.verificationCode.create({
       data: {
