@@ -5,9 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import ProductForm from "./components/ProductForm";
 import AdminSidebar from "./components/AdminSidebar";
-import { DollarSign } from "lucide-react";
+import { DollarSign, ShoppingBag } from "lucide-react";
 import CouponForm from "./components/CupomForm";
 import axios from "axios";
+import OrdersTab from "./components/OrdersTab";
 
 // ── ícones inline ──────────────────────────────────────────────────────────────
 const IconBox = () => (
@@ -64,18 +65,12 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
       }}
     />,
   },
-  /*{
-    id: "analytics",
-    label: "Analytics",
-    icon: <IconChart />,
-    component: <div style={{ color: "var(--muted)" }}>Dashboard de analytics em breve.</div>,
-  },
   {
-    id: "settings",
-    label: "Configurações",
-    icon: <IconSettings />,
-    component: <div style={{ color: "var(--muted)" }}>Configurações em breve.</div>,
-  },*/
+    id: "orders",
+    label: "Pedidos",
+    icon: <ShoppingBag size={18} />,
+    component: <OrdersTab />,
+  },
 ];
 
 // ── page ──────────────────────────────────────────────────────────────────────

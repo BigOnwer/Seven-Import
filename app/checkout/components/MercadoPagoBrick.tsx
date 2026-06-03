@@ -13,7 +13,8 @@ export default function MercadoPagoBrick({ orderId, amount, onSuccess, onError }
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const key = process.env.MERCADO_PAGO_PUBLIC_TOKEN;
+    const key = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_TOKEN;
+    console.log("MP KEY:", key);
     if (!key) return;
 
     initMercadoPago(key, { locale: "pt-BR" });

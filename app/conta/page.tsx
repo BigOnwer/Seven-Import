@@ -21,9 +21,27 @@ const MOCK_ORDERS = [
   { id: "#S7-2024-002", date: "02/04/2024", status: "Em trânsito", total: 1249, items: [products[1]], tracking: "BR987654321" },
   { id: "#S7-2024-003", date: "18/04/2024", status: "Processando", total: 699,  items: [products[2]], tracking: null },
 ];
+
 const STATUS_COLOR: Record<string, string> = {
-  "Entregue": "#22C55E", "Em trânsito": "#F5C518", "Processando": "#888",
+  PENDING:    "#888",
+  CONFIRMED:  "#F5C518",
+  PROCESSING: "#F5C518",
+  SHIPPED:    "#60A5FA",
+  DELIVERED:  "#22C55E",
+  CANCELLED:  "#e74c3c",
+  REFUNDED:   "#e74c3c",
 };
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING:    "Aguardando pagamento",
+  CONFIRMED:  "Confirmado",
+  PROCESSING: "Em separação",
+  SHIPPED:    "Em trânsito",
+  DELIVERED:  "Entregue",
+  CANCELLED:  "Cancelado",
+  REFUNDED:   "Reembolsado",
+};
+
 const TABS = [
   { id: "pedidos",    label: "Meus Pedidos",  icon: Package    },
   { id: "favoritos",  label: "Favoritos",      icon: Heart      },
@@ -44,6 +62,18 @@ export default function ContaPage() {
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "pedidos") return;
+    setOrdersLoading(true);
+    fetch("/api/orders")
+      .then(r => r.json())
+      .then(d => setOrders(d.data ?? []))
+      .finally(() => setOrdersLoading(false));
+  }, [tab]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -158,45 +188,85 @@ export default function ContaPage() {
           {/* PEDIDOS */}
           {tab === "pedidos" && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 32, color: "var(--white)", marginBottom: 24 }}>MEUS <span style={{ color: "var(--gold)" }}>PEDIDOS</span></h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {MOCK_ORDERS.map(order => (
-                  <div key={order.id}
-                    style={{ background: "var(--black-2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 20, transition: "border-color .2s" }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,197,24,0.2)")}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-                      <div>
-                        <div className="font-condensed" style={{ fontSize: 15, fontWeight: 700, color: "var(--white)", letterSpacing: "0.05em" }}>{order.id}</div>
-                        <div style={{ fontSize: 12, color: "var(--gray)", marginTop: 2 }}>{order.date}</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <span className="font-condensed" style={{ fontSize: 11, fontWeight: 700, color: STATUS_COLOR[order.status], letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                          ● {order.status}
-                        </span>
-                        <div className="font-display" style={{ fontSize: 22, color: "var(--gold)" }}>R$ {order.total.toLocaleString("pt-BR")}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                      {order.items.map(item => (
-                        <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.03)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{item.emoji}</div>
-                          <div>
-                            <div className="font-condensed" style={{ fontSize: 13, fontWeight: 700, color: "var(--white)" }}>{item.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--gray)" }}>{item.brand}</div>
+              <h2 className="font-display" style={{ fontSize: 32, color: "var(--white)", marginBottom: 24 }}>
+                MEUS <span style={{ color: "var(--gold)" }}>PEDIDOS</span>
+              </h2>
+
+              {ordersLoading ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: "var(--gray)" }}>Carregando pedidos...</div>
+              ) : orders.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 0" }}>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+                  <div className="font-display" style={{ fontSize: 28, color: "var(--white)", marginBottom: 8 }}>Nenhum pedido ainda</div>
+                  <Link href="/produtos" className="btn-gold" style={{ display: "inline-block", marginTop: 16, padding: "12px 24px", borderRadius: 4, textDecoration: "none", fontSize: 14 }}>
+                    Ver produtos
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {orders.map(order => (
+                    <div key={order.id}
+                      style={{ background: "var(--black-2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 20, transition: "border-color .2s" }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,197,24,0.2)")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
+
+                      {/* Cabeçalho */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+                        <div>
+                          <div className="font-condensed" style={{ fontSize: 15, fontWeight: 700, color: "var(--white)", letterSpacing: "0.05em" }}>
+                            #{order.id.slice(-8).toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--gray)", marginTop: 2 }}>
+                            {new Date(order.createdAt).toLocaleDateString("pt-BR")}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                    {order.tracking && (
-                      <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 8 }}>
-                        <span className="font-condensed" style={{ fontSize: 11, color: "var(--gray)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Rastreio:</span>
-                        <span className="font-condensed" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>{order.tracking}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                          <span className="font-condensed" style={{ fontSize: 11, fontWeight: 700, color: STATUS_COLOR[order.status], letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                            ● {STATUS_LABEL[order.status]}
+                          </span>
+                          <div className="font-display" style={{ fontSize: 22, color: "var(--gold)" }}>
+                            R$ {Number(order.total).toLocaleString("pt-BR")}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+
+                      {/* Itens */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {order.items.map((item: any) => (
+                          <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 52, height: 52, borderRadius: 8, overflow: "hidden", background: "rgba(255,255,255,0.03)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              {item.product.images?.[0]
+                                ? <img src={item.product.images[0]} alt={item.product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                : <span style={{ fontSize: 24 }}>{item.product.emoji}</span>}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="font-condensed" style={{ fontSize: 13, fontWeight: 700, color: "var(--white)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.product.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--gray)" }}>
+                                {item.product.brand}
+                                {item.size ? ` · Tam. ${item.size}` : ""}
+                                {item.quantity > 1 ? ` · Qtd: ${item.quantity}` : ""}
+                              </div>
+                            </div>
+                            <div className="font-condensed" style={{ fontSize: 14, fontWeight: 700, color: "var(--white)", flexShrink: 0 }}>
+                              R$ {(Number(item.price) * item.quantity).toLocaleString("pt-BR")}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Rastreio */}
+                      {order.trackingCode && (
+                        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span className="font-condensed" style={{ fontSize: 11, color: "var(--gray)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Rastreio:</span>
+                          <span className="font-condensed" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>{order.trackingCode}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

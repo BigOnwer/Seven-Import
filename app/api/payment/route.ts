@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { randomUUID } from "crypto";
 
 const client = new MercadoPagoConfig({

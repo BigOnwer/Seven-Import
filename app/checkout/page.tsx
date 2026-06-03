@@ -75,6 +75,23 @@ export default function CheckoutPage() {
   const [cardToken,          setCardToken]          = useState("");
   const [installmentOptions, setInstallmentOptions] = useState<any[]>([]);
 
+  const fetchCep = async (cep: string) => {
+    const clean = cep.replace(/\D/g, "");
+    if (clean.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (data.erro) return;
+      setAddr(prev => ({
+        ...prev,
+        rua:    data.logradouro ?? prev.rua,
+        bairro: data.bairro     ?? prev.bairro,
+        cidade: data.localidade ?? prev.cidade,
+        estado: data.uf         ?? prev.estado,
+      }));
+    } catch {}
+  };
+
   // Desconto
   const discount   = coupon
     ? coupon.discountType === "PERCENTAGE"
@@ -82,61 +99,6 @@ export default function CheckoutPage() {
       : Math.min(coupon.discountValue, total)
     : 0;
   const finalTotal = Math.max(0, total - discount + selectedFrete.price);
-
-  // ── Detecta bandeira do cartão via MP ────────────────────────────────────
-  useEffect(() => {
-    if (step !== "pagamento" || method !== "cartao") return;
-
-    const mp = (window as any).MercadoPago;
-    if (!mp) return;
-
-    const instance = new mp(process.env.MERCADO_PAGO_PUBLIC_TOKEN!, { locale: "pt-BR" });
-
-    const cardForm = instance.cardForm({
-      amount: String(finalTotal),
-      iframe: true,
-      form: {
-        id: "mp-card-form",
-        cardNumber:      { id: "mp-cardNumber",      placeholder: "0000 0000 0000 0000" },
-        expirationDate:  { id: "mp-expirationDate",  placeholder: "MM/AA"               },
-        securityCode:    { id: "mp-securityCode",    placeholder: "CVV"                 },
-        cardholderName:  { id: "mp-cardholderName",  placeholder: "COMO ESTÁ NO CARTÃO" },
-        issuer:          { id: "mp-issuer"                                               },
-        installments:    { id: "mp-installments"                                         },
-        identificationType:   { id: "mp-identificationType"   },
-        identificationNumber: { id: "mp-identificationNumber" },
-      },
-      callbacks: {
-        onFormMounted: (err: any) => { if (err) console.error("CardForm mount error:", err); },
-        onCardTokenReceived: (err: any, token: any) => {
-          if (err) { setError("Erro ao processar cartão."); return; }
-          setCardToken(token.id);
-          (window as any).__mpToken = token.id; // ← para o polling acima
-        },
-        onPaymentMethodsReceived: (_: any, methods: any) => {
-          setCardBrand(methods?.[0]?.id ?? "");
-        },
-        onInstallmentsReceived: (_: any, data: any) => {
-          setInstallmentOptions(data?.payer_costs ?? []);
-        },
-      },
-    });
-
-    (window as any).__mpCardForm = cardForm;
-
-    return () => {
-      try { cardForm.unmount(); } catch {}
-    };
-  }, [step, method]);
-
-  // ── Carrega SDK do MP ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (document.getElementById("mp-sdk")) return;
-    const s = document.createElement("script");
-    s.id  = "mp-sdk";
-    s.src = "https://sdk.mercadopago.com/js/v2";
-    document.head.appendChild(s);
-  }, []);
 
   // ── Aplica cupom ──────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
@@ -179,61 +141,6 @@ export default function CheckoutPage() {
     finally { setProcessing(false); }
   };
 
-  // ── Tokeniza cartão e processa pagamento ──────────────────────────────────
-  const handlePayment = async () => {
-    if (!orderId) return;
-    setError(""); setProcessing(true);
-    try {
-      if (method === "cartao") {
-        // Dispara a geração do token — o callback onCardTokenReceived vai setar cardToken
-        const form = (window as any).__mpCardForm;
-        if (!form) throw new Error("Formulário de cartão não inicializado.");
-        form.submit(); // isso dispara onCardTokenReceived
-
-        // Aguarda o token ser setado (com timeout)
-        const token = await new Promise<string>((resolve, reject) => {
-          let tries = 0;
-          const interval = setInterval(() => {
-            const t = (window as any).__mpToken;
-            if (t) { clearInterval(interval); resolve(t); }
-            if (++tries > 30) { clearInterval(interval); reject(new Error("Timeout ao gerar token do cartão.")); }
-          }, 300);
-        });
-
-        const res = await fetch("/api/payment", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId, method, token,
-            paymentMethodId: cardBrand,
-            email: payer.email, cpf: payer.cpf,
-            firstName: payer.firstName, lastName: payer.lastName,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Erro no pagamento");
-        if (data.status === "approved") clearCart();
-        setResult(data); setStep("resultado");
-        return;
-      }
-
-      // PIX e Boleto — igual antes
-      const res = await fetch("/api/payment", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId, method,
-          email: payer.email, cpf: payer.cpf,
-          firstName: payer.firstName, lastName: payer.lastName,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro no pagamento");
-      if (data.status === "approved") clearCart();
-      setResult(data); setStep("resultado");
-
-    } catch (e: any) { setError(e.message); }
-    finally { setProcessing(false); }
-  };
-
   const copyPix = () => {
     if (!result?.qrCode) return;
     navigator.clipboard.writeText(result.qrCode);
@@ -256,13 +163,6 @@ export default function CheckoutPage() {
   };
   const fo = (e: any) => (e.currentTarget.style.borderColor = "var(--gold)");
   const bl = (e: any) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)");
-
-  const iframeContainerStyle: React.CSSProperties = {
-    height: 46, padding: "0 14px",
-    background: "var(--black)", border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 6, display: "flex", alignItems: "center",
-    transition: "border-color 0.2s",
-  };
 
   const field = (label: string, value: string, onChange: (v:string)=>void, placeholder: string, style?: React.CSSProperties) => (
     <div style={style}>
@@ -322,7 +222,22 @@ export default function CheckoutPage() {
                 </h2>
 
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }}>
-                  {field("CEP",         addr.cep,         v=>setA("cep",v),         "00000-000")}
+                  <div>
+                    <label style={labelStyle}>CEP</label>
+                    <input
+                      value={addr.cep}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 8)
+                          .replace(/(\d{5})(\d)/, "$1-$2");
+                        setA("cep", v);
+                      }}
+                      onBlur={e => fetchCep(e.target.value)}
+                      placeholder="00000-000"
+                      style={inputStyle}
+                      onFocus={fo}
+                      onBlur={(e) => { bl(e); fetchCep(e.target.value); }}
+                    />
+                  </div>
                   {field("Estado",      addr.estado,      v=>setA("estado",v),      "MG")}
                   {field("Cidade",      addr.cidade,      v=>setA("cidade",v),      "Belo Horizonte", { gridColumn:"1/-1" })}
                   {field("Bairro",      addr.bairro,      v=>setA("bairro",v),      "Centro")}
