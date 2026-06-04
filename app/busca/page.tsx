@@ -38,7 +38,7 @@ function BuscaContent() {
   const { addItem }         = useCart();
   const { toggle, isLiked } = useWishlist();
   const { showToast }       = useToast();
-  const [added, setAdded]   = useState<string | null>(null);
+  const [added, setAdded]   = useState<number | null>(null);
 
   const handleSearch = (val: string) => setInputVal(val);
 
