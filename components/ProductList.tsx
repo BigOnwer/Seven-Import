@@ -1,24 +1,11 @@
-import { API } from "@/lib/axios";
+import { prisma } from "@/lib/prisma";
 import Products from "./Products";
 
-async function getProducts() {
-  const res = await API.get('/products/');
-
-  if (!res) throw new Error("Erro ao buscar produtos");
-
-  const data = res.data;
-  console.log(data)
-  return data.data;
-}
-
 export async function ProductList() {
-  const products = await getProducts();
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 8,
+  });
 
-  return (
-    <>
-      {products.map((product: any) => (
-        <Products key={product.id} />
-      ))}
-    </>
-  );
+  return <Products />;
 }

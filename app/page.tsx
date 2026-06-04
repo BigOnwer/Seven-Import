@@ -5,11 +5,10 @@ import Marquee from "@/components/Marquee";
 import PromoBanner from "@/components/PromoBanner";
 import Features from "@/components/Features";
 import CategoryGrid from "@/components/CategoryGrid";
-import Products from "@/components/Products";
 import Testimonials from "@/components/Testimonials";
 import InstagramCTA from "@/components/InstagramCTA";
 import Footer from "@/components/Footer";
-import { ProductList } from "@/components/ProductList";
+import Products from "@/components/Products";
 
 export default function Home() {
   return (
@@ -20,7 +19,7 @@ export default function Home() {
       <PromoBanner />
       <Features />
       <CategoryGrid />
-      <ProductList />
+      <Products />
       <Testimonials />
       <InstagramCTA />
       <Footer />

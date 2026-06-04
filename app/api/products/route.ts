@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
     const page     = Math.max(1, Number(searchParams.get("page")  || 1));
     const limit    = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 12)));
     const skip     = (page - 1) * limit;
+    const isNew    = searchParams.get("isNew");
+    const isSale   = searchParams.get("isSale");
 
     // Monta filtro dinâmico
     const where: any = {
@@ -42,6 +44,8 @@ export async function GET(req: NextRequest) {
         { price: { gte: minPrice, lte: maxPrice } },
         inStock === "true"  ? { stock: { gt: 0 } }   : {},
         inStock === "false" ? { stock: { lte: 0 } }  : {},
+        isNew  === "true" ? { isNew:  true } : {},
+        isSale === "true" ? { isSale: true } : {},
       ],
     };
 
