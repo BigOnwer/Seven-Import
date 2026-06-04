@@ -231,11 +231,10 @@ export default function CheckoutPage() {
                           .replace(/(\d{5})(\d)/, "$1-$2");
                         setA("cep", v);
                       }}
-                      onBlur={e => fetchCep(e.target.value)}
                       placeholder="00000-000"
                       style={inputStyle}
                       onFocus={fo}
-                      onBlur={(e) => { bl(e); fetchCep(e.target.value); }}
+                      onBlur={e => { bl(e); fetchCep(e.target.value); }}
                     />
                   </div>
                   {field("Estado",      addr.estado,      v=>setA("estado",v),      "MG")}
