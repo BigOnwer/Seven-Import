@@ -314,27 +314,38 @@ export default function ContaPage() {
           {/* ENDEREÇOS */}
           {tab === "enderecos" && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 32, color: "var(--white)", marginBottom: 24 }}>MEUS <span style={{ color: "var(--gold)" }}>ENDEREÇOS</span></h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
-                {user.address?.map(addr => (
-                  <div key={addr.label} style={{ background: "var(--black-2)", border: addr.default ? "1px solid rgba(245,197,24,0.3)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div className="font-condensed" style={{ fontSize: 14, fontWeight: 700, color: "var(--white)", letterSpacing: "0.05em" }}>{addr.label}</div>
-                      {addr.default && <span className="tag" style={{ fontSize: 9 }}>Padrão</span>}
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <MapPin size={13} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span style={{ fontSize: 12, color: "var(--gray)", lineHeight: 1.6 }}>{addr.addr}</span>
-                    </div>
+              <h2 className="font-display" style={{ fontSize: 32, color: "var(--white)", marginBottom: 24 }}>
+                MEUS <span style={{ color: "var(--gold)" }}>ENDEREÇOS</span>
+              </h2>
+
+              {user.address && (
+                <div style={{
+                  background: "var(--black-2)", border: "1px solid rgba(245,197,24,0.2)",
+                  borderRadius: 10, padding: 20, marginBottom: 14, maxWidth: 480,
+                }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <MapPin size={13} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ fontSize: 13, color: "var(--gray)", lineHeight: 1.6 }}>
+                      {user.address}
+                    </span>
                   </div>
-                ))}
-                <button style={{ background: "transparent", border: "1px dashed rgba(255,255,255,0.12)", borderRadius: 10, padding: 20, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, transition: "border-color .2s", minHeight: 100 }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--gold)")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}>
-                  <span style={{ fontSize: 24, color: "var(--gray)" }}>+</span>
-                  <span className="font-condensed" style={{ fontSize: 12, color: "var(--gray)", letterSpacing: "0.1em" }}>Adicionar endereço</span>
-                </button>
-              </div>
+                </div>
+              )}
+
+              <button style={{
+                background: "transparent", border: "1px dashed rgba(255,255,255,0.12)",
+                borderRadius: 10, padding: 20, cursor: "pointer",
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", gap: 8, minHeight: 100, minWidth: 200,
+                transition: "border-color .2s",
+              }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--gold)")}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}>
+                <span style={{ fontSize: 24, color: "var(--gray)" }}>+</span>
+                <span className="font-condensed" style={{ fontSize: 12, color: "var(--gray)", letterSpacing: "0.1em" }}>
+                  Adicionar endereço
+                </span>
+              </button>
             </div>
           )}
 
