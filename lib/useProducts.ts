@@ -35,6 +35,8 @@ export type ProductFilters = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+   isNew?: boolean;
+  isSale?: boolean;
   sort?: "newest" | "price_asc" | "price_desc" | "stars";
   page?: number;
   limit?: number;
@@ -49,14 +51,16 @@ export type ProductsMeta = {
 
 function buildQuery(filters: ProductFilters): string {
   const p = new URLSearchParams();
-  if (filters.search)             p.set("search",   filters.search);
-  if (filters.category)           p.set("category", filters.category);
+  if (filters.search)                 p.set("search",   filters.search);
+  if (filters.category)               p.set("category", filters.category);
   if (filters.minPrice !== undefined) p.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined) p.set("maxPrice", String(filters.maxPrice));
   if (filters.inStock  !== undefined) p.set("inStock",  String(filters.inStock));
-  if (filters.sort)               p.set("sort",     filters.sort);
-  if (filters.page)               p.set("page",     String(filters.page));
-  if (filters.limit)              p.set("limit",    String(filters.limit));
+  if (filters.sort)                   p.set("sort",     filters.sort);
+  if (filters.isNew    !== undefined) p.set("isNew",    String(filters.isNew));   // adicione
+  if (filters.isSale   !== undefined) p.set("isSale",   String(filters.isSale));
+  if (filters.page)                   p.set("page",     String(filters.page));
+  if (filters.limit)                  p.set("limit",    String(filters.limit));
   return p.toString();
 }
 
