@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       qrCode:       result.point_of_interaction?.transaction_data?.qr_code,
       qrCodeBase64: result.point_of_interaction?.transaction_data?.qr_code_base64,
       boletoUrl:    result.transaction_details?.external_resource_url,
-      barcode:      result.barcode?.content,
+      barcode:      (result as any).barcode?.content,
     });
 
   } catch (err: any) {
