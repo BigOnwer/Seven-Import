@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import ProductForm from "./components/ProductForm";
-import AdminSidebar from "./components/AdminSidebar";
+import AdminSidebar, { SidebarItem } from "./components/AdminSidebar";
 import { DollarSign, ShoppingBag } from "lucide-react";
 import CouponForm from "./components/CupomForm";
 import axios from "axios";
