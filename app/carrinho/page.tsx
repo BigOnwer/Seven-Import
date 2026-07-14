@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/lib/cartContext";
 import { useCoupon } from "@/lib/useCoupon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const SHIPPING_THRESHOLD = 800;
@@ -38,6 +38,76 @@ export default function CartPage() {
     setCheckingOut(true);
     router.push("/checkout");
   };
+
+  useEffect(() => {
+
+    async function validateCart() {
+
+      if(items.length === 0) return;
+
+
+      try {
+
+        const res = await fetch("/api/products?limit=1000");
+
+        const data = await res.json();
+
+
+        const products = data.data;
+
+
+        items.forEach(item => {
+
+          const currentProduct = products.find(
+            (product:any) => product.id === item.product.id
+          );
+
+
+          // Produto deletado
+          if(!currentProduct){
+
+            removeItem(
+              item.product.id,
+              item.size
+            );
+
+            return;
+          }
+
+
+          // Produto sem estoque
+          if(
+            !currentProduct.inStock ||
+            currentProduct.stock <= 0
+          ){
+
+            removeItem(
+              item.product.id,
+              item.size
+            );
+
+          }
+
+
+        });
+
+
+      } catch(error){
+
+        console.error(
+          "Erro ao validar carrinho:",
+          error
+        );
+
+      }
+
+    }
+
+
+    validateCart();
+
+
+  }, [items, removeItem]);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--black)" }}>

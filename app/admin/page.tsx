@@ -9,6 +9,7 @@ import { DollarSign, ShoppingBag } from "lucide-react";
 import CouponForm from "./components/CupomForm";
 import axios from "axios";
 import OrdersTab from "./components/OrdersTab";
+import ProductList from "./components/ProductList";
 
 // ── ícones inline ──────────────────────────────────────────────────────────────
 const IconBox = () => (
@@ -50,6 +51,12 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
     label: "Produtos",
     icon: <IconBox />,
     component: <ProductForm />,
+  },
+  {
+    id: "listProducts",
+    label: "Lista de Produtos",
+    icon: <IconBox />,
+    component: <ProductList />,
   },
   {
     id: "cupons",
