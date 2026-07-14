@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, User, Phone, CreditCard, AlertCircle, Check } from "lucide-react";
+import { ArrowLeft, Mail, User, Phone, CreditCard, AlertCircle, Check, Lock } from "lucide-react";
 import AuthLeft from "@/components/ui/AuthLeft";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +31,7 @@ export default function CadastroPage() {
   const [nome, setNome] = useState("");
   const [sobrenome, setSobrenome] = useState("");
   const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [cpf, setCpf] = useState("");
   const [tel, setTel] = useState("");
   const [terms, setTerms] = useState(false);
@@ -58,7 +59,15 @@ export default function CadastroPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nome || !email) { setError("Preencha nome e email."); return; }
+    if (!nome || !email || !senha) { 
+      setError("Preencha nome, email e senha."); 
+      return; 
+    }
+
+    if (senha.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
     if (!terms) { setError("Aceite os termos para continuar."); return; }
 
     setError("");
@@ -68,6 +77,7 @@ export default function CadastroPage() {
       await register({
         name: `${nome}${sobrenome ? " " + sobrenome : ""}`,
         email,
+        password: senha,
         cpf: cpf || undefined,
         phone: tel || undefined,
       });
@@ -163,6 +173,27 @@ export default function CadastroPage() {
                 onChange={e => { setEmail(e.target.value); setError(""); }}
                 onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
                 autoComplete="email" style={inp("email")} />
+            </div>
+          </div>
+
+          <div>
+            <label style={label}>Senha <span style={{ color: "#e74c3c" }}>*</span></label>
+            <div style={{ position: "relative" }}>
+              <IconWrap icon={Lock} field="senha" />
+
+              <input
+                type="password"
+                value={senha}
+                placeholder="••••••••"
+                onChange={e => {
+                  setSenha(e.target.value);
+                  setError("");
+                }}
+                onFocus={() => setFocused("senha")}
+                onBlur={() => setFocused(null)}
+                autoComplete="new-password"
+                style={inp("senha")}
+              />
             </div>
           </div>
 

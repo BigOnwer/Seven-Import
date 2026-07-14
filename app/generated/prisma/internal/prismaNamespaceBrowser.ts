@@ -58,7 +58,6 @@ export const ModelName = {
   CartItem: 'CartItem',
   Product: 'Product',
   Coupon: 'Coupon',
-  VerificationCode: 'VerificationCode',
   Session: 'Session'
 } as const
 
@@ -81,6 +80,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export const UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
+  password: 'password',
   name: 'name',
   address: 'address',
   cpf: 'cpf',
@@ -203,19 +203,6 @@ export const CouponScalarFieldEnum = {
 } as const
 
 export type CouponScalarFieldEnum = (typeof CouponScalarFieldEnum)[keyof typeof CouponScalarFieldEnum]
-
-
-export const VerificationCodeScalarFieldEnum = {
-  id: 'id',
-  code: 'code',
-  email: 'email',
-  expiresAt: 'expiresAt',
-  used: 'used',
-  createdAt: 'createdAt',
-  userId: 'userId'
-} as const
-
-export type VerificationCodeScalarFieldEnum = (typeof VerificationCodeScalarFieldEnum)[keyof typeof VerificationCodeScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {

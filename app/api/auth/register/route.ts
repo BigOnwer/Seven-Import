@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, cpf, phone } = await req.json();
+    const { name, email, cpf, phone, password } = await req.json();
 
-    if (!name?.trim() || !email?.trim()) {
+    if (!name?.trim() || !email?.trim() || !password?.trim()) {
       return NextResponse.json(
-        { error: "Nome e email são obrigatórios." },
+        { error: "Nome, email e senha são obrigatórios." },
         { status: 400 }
       );
     }
@@ -23,11 +24,13 @@ export async function POST(req: NextRequest) {
       // O usuário já existe, mas pode fazer login normalmente
       return NextResponse.json({ success: true, alreadyExists: true });
     }
+    const hashedPassword = bcrypt.hashSync(password.trim(), 12);
 
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
+        password: hashedPassword,
         cpf: cpf?.trim() || null,
         phone: phone?.trim() || null,
       },

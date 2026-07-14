@@ -6,6 +6,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  password?: string;
   phone?: string | null;
   cpf?: string | null;
   address?: string | null;
@@ -29,25 +30,28 @@ export function useAuth() {
   async function register(data: {
     name: string;
     email: string;
+    password: string;
     cpf?: string;
     phone?: string;
   }) {
+
     const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify(data),
     });
+
+
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error ?? "Erro ao criar conta.");
-    // Após registrar, dispara o fluxo de login por código
-    // para já autenticar o usuário
-    const sendRes = await fetch("/api/auth/send-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: data.email }),
-    });
-    const sendJson = await sendRes.json();
-    if (!sendRes.ok) throw new Error(sendJson.error ?? "Erro ao enviar código.");
+
+
+    if(!res.ok){
+      throw new Error(json.error ?? "Erro ao criar conta.");
+    }
+
+
     return json;
   }
 

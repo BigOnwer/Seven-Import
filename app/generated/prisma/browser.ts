@@ -53,11 +53,6 @@ export type Product = Prisma.ProductModel
  */
 export type Coupon = Prisma.CouponModel
 /**
- * Model VerificationCode
- * 
- */
-export type VerificationCode = Prisma.VerificationCodeModel
-/**
  * Model Session
  * 
  */

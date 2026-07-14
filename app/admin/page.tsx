@@ -81,7 +81,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
     // Descomente para bloquear por role:
-    // if (!loading && user && user.role !== "ADMIN") router.replace("/");
+    if (!loading && user && user.role !== "ADMIN") router.replace("/");
   }, [user, loading, router]);
 
   if (loading) {

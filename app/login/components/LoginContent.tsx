@@ -5,29 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle, Code } from "lucide-react";
 import AuthLeft from "@/components/ui/AuthLeft";
 import { useToast } from "@/components/ui/Toast";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-
-
-type Step = "email" | "code";
 
 export default function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { showToast } = useToast();
-
-  const [email, setEmail] = useState(searchParams.get("email") ?? "");
-  const [step, setStep] = useState<Step>(
-    searchParams.get("step") === "code" ? "code" : "email"
-  );
-  const [code, setCode] = useState("");
-  const [resendTimer, setResendTimer] = useState(
-    searchParams.get("step") === "code" ? 60 : 0
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focused, setFocused] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const inp = (field: string): React.CSSProperties => ({
     width: "100%", height: 50,
@@ -39,74 +28,39 @@ export default function LoginContent() {
     transition: "border-color .2s, box-shadow .2s",
     boxShadow: focused === field ? "0 0 0 3px rgba(245,197,24,0.1)" : "none",
   });
-  
  
-  function startResendTimer() {
-    setResendTimer(60);
-    const interval = setInterval(() => {
-      setResendTimer((t) => {
-        if (t <= 1) { clearInterval(interval); return 0; }
-        return t - 1;
-      });
-    }, 1000);
-  }
- 
-  async function handleSendCode(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+
     setError("");
     setLoading(true);
+
     try {
-      const res = await fetch("/api/auth/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch("/api/auth/login", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          email,
+          password
+        })
+      })
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setStep("code");
-      startResendTimer();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setLoading(false);
-    }
-  }
- 
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+
+      if (!res.ok) {
+        throw new Error(data.error);
+      }
+
       router.push("/produtos");
+
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setLoading(false);
-    }
-  }
- 
-  async function handleResend() {
-    if (resendTimer > 0) return;
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      startResendTimer();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setError(
+        err instanceof Error 
+        ? err.message 
+        : "Erro ao fazer login"
+      );
     } finally {
       setLoading(false);
     }
@@ -154,15 +108,9 @@ export default function LoginContent() {
         ) : (
           <>
             <div style={{ marginBottom: 32 }}>
-              {step === "email" ? (
                 <h1 className="font-display" style={{ fontSize: "clamp(36px,4vw,52px)", color: "#f5f5f0", lineHeight: 0.92, marginBottom: 10 }}>
-                ENTRAR NA<br /><span style={{ color: "#f5c518" }}>SUA CONTA</span>
-              </h1>
-              ) : (
-                <h1 className="font-display" style={{ fontSize: "clamp(36px,4vw,52px)", color: "#f5f5f0", lineHeight: 0.92, marginBottom: 10 }}>
-                VERIFICAR<br /><span style={{ color: "#f5c518" }}>E-MAIL</span>
-              </h1>
-              )}
+                  ENTRAR NA<br /><span style={{ color: "#f5c518" }}>SUA CONTA</span>
+                </h1>
               
               <p style={{ fontSize: 14, color: "#888" }}>
                 Não tem conta?{" "}
@@ -181,8 +129,7 @@ export default function LoginContent() {
               </div>
             )}
 
-            {step === "email" ? (
-              <form onSubmit={handleSendCode} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <form onSubmit={handleLogin}>
                 {/* Email */}
                 <div>
                   <label style={label}>E-mail</label>
@@ -198,39 +145,60 @@ export default function LoginContent() {
                   </div>
                 </div>
 
-                {/* Submit */}
-                <button type="submit" disabled={loading} className="btn-gold"
-                  style={{
-                    height: 52, borderRadius: 8, border: "none",
-                    cursor: loading ? "wait" : "pointer", fontSize: 14,
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    opacity: loading ? 0.8 : 1, marginTop: 4,
-                  }}>
-                  {loading ? <><Spinner /> Entrando...</> : "Entrar na conta →"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyCode} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                {/* Code */}
                 <div>
-                  <div className="flex gap-1">
-                    <Eye size={15} />
-                    <label style={label}>Código de verificação</label>
+                  <label style={label}>Senha</label>
+
+                  <div style={{position:"relative"}}>
+
+                  <Lock 
+                  size={15}
+                  style={{
+                  position:"absolute",
+                  left:15,
+                  top:"50%",
+                  transform:"translateY(-50%)",
+                  color: focused === "password" ? "#f5c518" : "#555"
+                  }}
+                  />
+
+
+                  <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  placeholder="••••••••"
+                  onChange={e => {
+                  setPassword(e.target.value)
+                  setError("")
+                  }}
+                  onFocus={() => setFocused("password")}
+                  onBlur={() => setFocused(null)}
+                  style={inp("password")}
+                  />
+
+
+                  <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                  position:"absolute",
+                  right:14,
+                  top:"50%",
+                  transform:"translateY(-50%)",
+                  background:"none",
+                  border:"none",
+                  color:"#777",
+                  cursor:"pointer"
+                  }}
+                  >
+                  {
+                  showPassword 
+                  ? <EyeOff size={16}/>
+                  : <Eye size={16}/>
+                  }
+                  </button>
+
                   </div>
-                  <div style={{ position: "relative" }}>
-                    
-                    <InputOTP maxLength={6} required onChange={setCode} autoFocus value={code}>
-                      <InputOTPGroup>
-                        <InputOTPSlot index={0} className="border-neutral-500 w-13 h-13 text-xl"/>
-                        <InputOTPSlot index={1} className="border-neutral-500 w-13 h-13 text-xl"/>
-                        <InputOTPSlot index={2} className="border-neutral-500 w-13 h-13 text-xl"/>
-                        <InputOTPSlot index={3} className="border-neutral-500 w-13 h-13 text-xl"/>
-                        <InputOTPSlot index={4} className="border-neutral-500 w-13 h-13 text-xl"/>
-                        <InputOTPSlot index={5} className="border-neutral-500 w-13 h-13 text-xl"/>
-                      </InputOTPGroup>
-                    </InputOTP>
                   </div>
-                </div>
 
                 {/* Submit */}
                 <button type="submit" disabled={loading} className="btn-gold"
@@ -242,27 +210,7 @@ export default function LoginContent() {
                   }}>
                   {loading ? <><Spinner /> Entrando...</> : "Entrar na conta →"}
                 </button>
-
-                <div className="flex items-center justify-between text-sm pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setStep("email"); setCode(""); setError(""); }}
-                  className="text-zinc-500 hover:text-zinc-300 transition"
-                >
-                  ← Trocar email
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendTimer > 0 || loading}
-                  className="text-zinc-500 hover:text-zinc-300 transition
-                    disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {resendTimer > 0 ? `Reenviar em ${resendTimer}s` : "Reenviar código"}
-                </button>
-              </div>
               </form>
-            )}
             
 
             {/* Divider */}
